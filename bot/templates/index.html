@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Estate Chatbot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-box" id="chat-box"></div>
+        <div class="input-container">
+            <input type="text" id="user-input" placeholder="Type your message here...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const userInput = document.getElementById('user-input');
+
+        const conversation = [
+            { question: 'What is the square meters of the property?', field: 'squareMeters' },
+            { question: 'How many rooms does the property have?', field: 'numberOfRooms' },
+            { question: 'Does the property have a yard? (0 for No, 1 for Yes)', field: 'hasYard' },
+            { question: 'Does the property have a pool? (0 for No, 1 for Yes)', field: 'hasPool' },
+            { question: 'How many floors does the property have?', field: 'floors' },
+            { question: 'What is the city code of the property?', field: 'cityCode' },
+            { question: 'What is the city part range of the property?', field: 'cityPartRange' },
+            { question: 'How many previous owners did the property have?', field: 'numPrevOwners' },
+            { question: 'What year was the property built?', field: 'made' },
+            { question: 'Is the property newly built? (0 for No, 1 for Yes)', field: 'isNewBuilt' },
+            { question: 'Does the property have a storm protector? (0 for No, 1 for Yes)', field: 'hasStormProtector' },
+            { question: 'What is the size of the basement (in square meters)?', field: 'basement' },
+            { question: 'What is the size of the attic (in square meters)?', field: 'attic' },
+            { question: 'What is the size of the garage (in square meters)?', field: 'garage' },
+            { question: 'Does the property have a storage room? (0 for No, 1 for Yes)', field: 'hasStorageRoom' },
+            { question: 'Does the property have a guest room? (0 for No, 1 for Yes)', field: 'hasGuestRoom' },
+            { question: 'What is the price of the property?', field: 'price' }
+        ];
+
+        let currentQuestion = 0;
+        let userResponses = {};
+
+        function displayMessage(message, sender) {
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message ' + sender;
+            messageElement.innerText = message;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function askQuestion() {
+            if (currentQuestion < conversation.length) {
+                displayMessage(conversation[currentQuestion].question, 'bot');
+            } else {
+                fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userResponses)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    displayMessage('Recommended Category: ' + data.category, 'bot');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+        }
+
+        function sendMessage() {
+            const userMessage = userInput.value;
+            if (userMessage.trim() === '') return;
+
+            displayMessage(userMessage, 'user');
+            userResponses[conversation[currentQuestion].field] = Number(userMessage);
+            userInput.value = '';
+            currentQuestion++;
+            askQuestion();
+        }
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            askQuestion();
+        });
+    </script>
+</body>
+</html>
